@@ -12,10 +12,10 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/image3.jpg "Detection and Classification Block"
 [image4]: ./output_images/image4.jpg "Detection and Classification Procedure"
 [image5]: ./output_images/image5.png "Tensorflow's Object Detection API"
-[image6]: ./output_images/image6.png "Unsuccessful detection 1" 
-[image7]: ./output_images/image7.png "Unsuccessful detection 2" 
-[image8]: ./output_images/image8.png "Unsuccessful detection 3" 
-[image9]: ./output_images/single_image_inference.png "SSD300 inference on single image"
+[image6]: ./output_images/image6.png "False detection" 
+[image7]: ./output_images/image7.png "Unsuccessful detection 1" 
+[image8]: ./output_images/image8.png "Unsuccessful detection 2" 
+[image9]: ./output_images/single_image_inference.PNG "SSD300 inference on single image"
 [image10]: ./output_images/image9.png "Real-time video inference"
 [image11]: ./output_images/image10.png "Merged projects result" 
 [video1]: ./project_video.mp4
@@ -160,12 +160,10 @@ Besides the Keras implementation of the model itself it was necessary to impleme
 - L2 Normalisation layer in [`keras_layer_L2Normalization.py`](./keras_layers/keras_layer_L2Normalization.py)
 - Detections decoder layer in [`keras_layer_DecodeDetections2.py`](./keras_layers/keras_layer_DecodeDetections2.py)
 
-NAPISATI O IMPLEMENTACIJI SSD-a SVE!
-ISPOD PISATI O POJEDINIM REZULTATIMA!
 
 For the purpouse of inference first step was to load the pretrained weights contained in the HDF5 file.
 
-##### 1. Single image inference results
+#### 1. Single image inference results
 
 As a first step in testing the approach was to do a single image inference for which the test image provided by Udacity was used. In the script [`single_image_inference_SSD300.py`](./single_image_inference_SSD300.py) the model is constructed by calling the _SSD300()_ function like this:
 
@@ -203,21 +201,79 @@ model = ssd_300(image_size=(img_height, img_width, 3),
                 top_k=200, # The number of highest scoring predictions to be kept for each batch item after the non-maximum suppression stage.
                 nms_max_output_size=400) # The maximal number of predictions that will be left over after the NMS stage.
 ```
+While the pipline for single image inference is:
+```python
+
+```
 
 Results are really good and both vehicles on the image were detected with a very large confidence score.
 ![alt text][image9]
 
-
 #### 2. Real-time video inference results
 
-Next step was to build the pipeline that would attepmt the real-time inference on the project video. The entire pipeline can be viewed in the [`video_inference_SSD300.py`](./video_inference_SSD300.py).
+Next step was to build the pipeline that would attepmt the real-time inference on the project video. The pipeline improves on the single image inference pipeline and uses the function _draw_boxes()_ to draw detection boxes on the video frames:
+```python
+def draw_boxes(img):
+  orig_images = []  # For storing images
+  input_images = [] # For storing resized images
 
+  orig_images.append(img)
+  im_res = cv2.resize(img, (300, 300))
+  input_images.append(im_res)
+  input_images = np.array(input_images)
+  
 
+  # predict on the image
+  y_pred = model.predict(input_images)
+
+  # set confidence threshold
+  confidence_threshold = 0.5
+  y_pred = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
+  
+  # set colors - this is an instance for 21 classes - we need only one
+  colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist() # Making a np array of 21 different colors for 21 classes and then converting it to a list
+
+  for x in range(len(colors)):
+    colors[x] = [int(y * 255) for y in colors[x]]
+
+  classes = ['background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
+             'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+             'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv']
+  
+  for box in y_pred[0]:
+    # Transform the predicted bounding boxes for 300x300 image to the original image dimensions.
+    if(int(box[0])) == 7:
+      xmin = int(box[-4] * img.shape[1] // img_width)
+      ymin = int(box[-3] * img.shape[0] // img_height)
+      xmax = int(box[-2] * img.shape[1] // img_width)
+      ymax = int(box[-1] * img.shape[0] // img_height)
+      color = colors[int(box[0])]
+      label = '{}: {:.2f}'.format(classes[int(box[0])], box[1])
+      cv2.rectangle(img,(xmin, ymin),(xmax, ymax), color ,2)
+      font = cv2.FONT_HERSHEY_SIMPLEX
+      cv2.putText(img, label ,(xmin,ymin), font, 0.7 , (255,255,255,1),2 ,cv2.LINE_AA)
+       
+  return img
+```
+After that in the _process_image()_ function the frame rate is calculated and drawn on the frame:
+```python
+def process_image(img):
+  start_time = time.time()
+  img2 = draw_boxes(img)
+  fps = 'FPS:  {:.2f}'.format(1.0 / (time.time() - start_time))
+  font = cv2.FONT_HERSHEY_SIMPLEX
+  cv2.putText(img2, fps, (5,20), font, 0.7, (255,255,255,1), 1,cv2.LINE_AA)
+  
+  return img2 
+```
+The entire script can be viewed in the [`video_inference_SSD300.py`](./video_inference_SSD300.py).
+
+The example of successful detection of vehicles on a frame is given below:
 ![alt text][image10]
 
 As can be seen the speed of inference is around 10 fps which is lower than in the Tensorflow's API which is probably because the API's model uses MobileNets for image classification which is faster than the VGG-16 from the original implementation used here. Also in the original code of SSD when all the classes are kept there are several instances of false detections railings as a train or a boat. In order to avoid that only one class, car was left in the code for detection.
 
-The video can be viewed [here](./output_video.mp4).
+The entire video can be viewed [here](./output_video.mp4).
 
 #### 3. Merging the project with the Advanced Lane Lines project
 
