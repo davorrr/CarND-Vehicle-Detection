@@ -7,17 +7,17 @@ The goals / steps of this project are the following:
 *  Integrate the implemented real-time objecte detection with Advanced Lane Lines finding project.
 
 [//]: # (Image References)
-[image1]: ./output_images/Screenshot (51)_LI.jpg "Object detection architectures overview"
-[image2]: ./output_images/InkedScreenshot (54)_LI.jpg "SSD300"
-[image3]: ./output_images/InkedScreenshot (57)_LI.jpg "Detection and Classification Block"
-[image4]: ./output_images/InkedScreenshot (63)_LI.jpg "Detection and Classification Procedure"
-[image5]: ./output_images/Screenshot (70).png "Tensorflow's Object Detection API"
-[image6]: ./output_images/Screenshot (65).png "Unsuccessful detection 1" 
-[image7]: ./output_images/Screenshot (66).png "Unsuccessful detection 2" 
-[image8]: ./output_images/Screenshot (67).png "Unsuccessful detection 3" 
+[image1]: ./output_images/image1.jpg "Object detection architectures overview"
+[image2]: ./output_images/image2.jpg "SSD300"
+[image3]: ./output_images/image3.jpg "Detection and Classification Block"
+[image4]: ./output_images/image4.jpg "Detection and Classification Procedure"
+[image5]: ./output_images/image5.png "Tensorflow's Object Detection API"
+[image6]: ./output_images/image6.png "Unsuccessful detection 1" 
+[image7]: ./output_images/image7.png "Unsuccessful detection 2" 
+[image8]: ./output_images/image8.png "Unsuccessful detection 3" 
 [image9]: ./output_images/single_image_inference.png "SSD300 inference on single image"
-[image10]: ./output_images/Screenshot (71).png "Real-time video inference"
-[image11]: ./output_images/Screenshot (72).png
+[image10]: ./output_images/image9.png "Real-time video inference"
+[image11]: ./output_images/image10.png "Merged projects result" 
 [video1]: ./project_video.mp4
 
 ---
