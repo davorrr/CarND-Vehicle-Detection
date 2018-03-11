@@ -201,13 +201,92 @@ model = ssd_300(image_size=(img_height, img_width, 3),
                 top_k=200, # The number of highest scoring predictions to be kept for each batch item after the non-maximum suppression stage.
                 nms_max_output_size=400) # The maximal number of predictions that will be left over after the NMS stage.
 ```
-While the pipline for single image inference is:
-```python
+Afterwards the trained model weights are loaded using:
 
+```python
+weights_path = 'C:/Users/davor/CarND-Vehicle-Detection-SSD-weights/VGG_VOC0712_SSD_300x300_ft_iter_120000.h5'
+
+model.load_weights(weights_path, by_name=True) # by_name flag enables loading weights for a different architecture then the one for which they were saved
 ```
+
+Weights themselves are too large for this repository but they can be downloaded [this link](https://drive.google.com/open?id=1sBmajn6vOE7qJ8GnxUJt4fGPuffVUZox).
+
+After the weights are loaded the model was compiled using following lines of code:
+```python
+adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=5e-04)
+
+ssd_loss = SSDLoss(neg_pos_ratio=3, n_neg_min=0, alpha=1.0) # Instatiation of SSDLoss class
+# neg_pos_ratio - Maximum ration of negative (i.e. background) to positive ground truth boxes to include in loss computation. Predicted boxes usually contain anchor boxes labeled
+#                 with the background class. Number of these boxes is much greater then the number of positive boxes and it is necesarry to balance their influence
+#                 on the loss.
+# n_neg_min     - Minimum number of negative ground truth boxes to enter the loss computation per batch. This can be used to ensure that the model learns from a minimum number of
+#                 negatives in batches in which there are very few, or even none at all, positive ground truth boxes.
+# alpha         - Weight factor for the localisation loss in the computation of total loss
+
+model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
+```
+Now the inference on a single frame could be done:
+```python
+orig_images = []  # For storing images
+input_images = [] # For storing resized images
+
+img_path = 'test_images/test4.jpg'
+
+# Resizing the image to 300x300 pixels to fit into the SSD300
+orig_images.append(imread(img_path))
+img = image.load_img(img_path, target_size=(img_height, img_width)) # Loads image in PIL format
+img = image.img_to_array(img) # Converts PIL image instance to Numpy array
+input_images.append(img)
+input_images = np.array(input_images)
+
+### Make predictions
+
+y_pred = model.predict(input_images)
+# y_pred contains a fixed number of predictions per batch item (200 in original model configuration), many
+# of which are low confidence predicions or dummy entries. We therefore need to apply a confidence threshold
+# to filter out the bad predictions.
+
+confidence_threshold = 0.5  ### Already done ?
+
+y_pred = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
+
+np.set_printoptions(precision=2, suppress=True, linewidth=90)
+print("Predicted boxes:\n")
+print('   class   conf   xmin   ymin   xmax   ymax')
+print(y_pred[0])
+
+
+### Display the image and draw the predicted boxes onto it
+
+# Set the colors for the bounding boxes
+colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist() # Making a np array of 20 different colors for 20 classes and then converting it to a list
+classes = ['background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
+           'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+           'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv']
+
+plt.figure(figsize=(20,12))
+plt.imshow(orig_images[0])
+
+current_axis = plt.gca() # Creating the axes instances
+
+for box in y_pred[0]:
+  # Transform the predicted bounding boxes for 300x300 image to the original image dimensions.
+  xmin = box[-4] * orig_images[0].shape[1] / img_width
+  ymin = box[-3] * orig_images[0].shape[0] / img_height
+  xmax = box[-2] * orig_images[0].shape[1] / img_width
+  ymax = box[-1] * orig_images[0].shape[0] / img_height
+  color = colors[int(box[0])]
+  label = '{}: {:.2f}'.format(classes[int(box[0])], box[1])
+  current_axis.add_patch(plt.Rectangle((xmin, ymin), xmax-xmin, ymax-ymin, 
+                                       color=color, fill=False, linewidth=2)) # Drawing rectangle around detected object
+  current_axis.text(xmin, ymin, label, size='x-large', color='white', 
+                    bbox={'facecolor':color, 'alpha':1.0})
+```
+It should be noted that the image resizing done here does not maintain aspect ratio. In order to try to achieve better results resizing that maintains aspect ratio was attempted but that interestingly lead to lower confidence scores so the first approach was kept.
 
 Results are really good and both vehicles on the image were detected with a very large confidence score.
 ![alt text][image9]
+
 
 #### 2. Real-time video inference results
 
