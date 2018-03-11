@@ -115,9 +115,6 @@ print("Predicted boxes:\n")
 print('   class   conf   xmin   ymin   xmax   ymax')
 print(y_pred[0])
 
-# We just resized the input image above and made predictions on the distorted image. We'd like to visualize the predictions on the
-# image in it's original size though, so below we'll transform the coordinates of the predicted boxes accordingly...
-
 
 ### Display the image and draw the predicted boxes onto it
 
@@ -143,8 +140,7 @@ for box in y_pred[0]:
   current_axis.add_patch(plt.Rectangle((xmin, ymin), xmax-xmin, ymax-ymin, 
                                        color=color, fill=False, linewidth=2)) # Drawing rectangle around detected object
   current_axis.text(xmin, ymin, label, size='x-large', color='white', 
-                    bbox={'facecolor':color,
-
+                    bbox={'facecolor':color, 'alpha':1.0})
                 
                 
                 
